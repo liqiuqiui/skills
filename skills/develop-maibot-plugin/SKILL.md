@@ -99,6 +99,8 @@ When asked to implement a plugin:
 1. Identify whether this is new development, modification, migration, or debugging.
 2. Read the relevant references:
    - New plugin or feature: `references/scaffolding.md` and `references/components-and-capabilities.md`.
+   - Exact decorator arguments, config model details, dynamic APIs, or component signatures: `references/component-signatures.md`.
+   - Exact `self.ctx` capability methods, method signatures, and manifest capability names: `references/sdk-methods.md`.
    - Migration from old plugin system: `references/migration.md`.
    - Debug/test/load problem: `references/testing-debugging.md`.
 3. Implement close to existing project style. Use `MaiBot/plugins/hello_world_plugin` as the local style anchor.
@@ -132,5 +134,7 @@ When asked to implement a plugin:
 
 - Read `references/scaffolding.md` before creating a new plugin folder, manifest, config model, or README.
 - Read `references/components-and-capabilities.md` when selecting decorators or using `self.ctx`.
+- Read `references/component-signatures.md` when implementing `@API`, `@Tool`, `@Command`, `@EventHandler`, `@HookHandler`, `@MessageGateway`, `@LLMProvider`, legacy `@Action`, config models, or dynamic APIs.
+- Read `references/sdk-methods.md` when using a specific `self.ctx` method or updating `_manifest.json` capability declarations.
 - Read `references/migration.md` before changing legacy plugins that import `src.plugin_system`, use `BasePlugin`, `register_plugin`, `BaseAction`, `BaseCommand`, `ConfigField`, `WorkflowStep`, or direct `src.*` APIs.
 - Read `references/testing-debugging.md` before claiming a plugin loads, before changing SDK code, or when diagnosing reload/runtime failures.

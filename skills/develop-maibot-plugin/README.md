@@ -22,5 +22,7 @@ skills/develop-maibot-plugin/SKILL.md
 - `_manifest.json` and capability declarations
 - `MaiBotPlugin`, lifecycle methods, and `create_plugin()`
 - `@Tool`, `@Command`, `@EventHandler`, `@HookHandler`, `@API`, `@MessageGateway`, and `@LLMProvider`
+- method-level `self.ctx` capability references for SDK 2.5.4
+- component decorator signatures and config model patterns
 - Migration from old `src.plugin_system` plugins
 - Focused validation and debugging workflow

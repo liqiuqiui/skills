@@ -23,7 +23,7 @@ Do not put a `SKILL.md` at the repository root if this catalog will contain mult
 
 ## Available Skills
 
-- `develop-maibot-plugin` - develop, migrate, debug, and package MaiBot plugins with `maibot-plugin-sdk`.
+- `develop-maibot-plugin` - develop, migrate, debug, and package MaiBot plugins with `maibot-plugin-sdk`, including SDK 2.5.4 component signatures and `self.ctx` capability methods.
 
 ## Install With `skills`
 
