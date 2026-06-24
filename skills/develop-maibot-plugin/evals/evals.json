@@ -1,0 +1,23 @@
+{
+  "skill_name": "develop-maibot-plugin",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "在 MaiBot/plugins 下面写一个 weather_notice 插件，用户输入 /weather 上海 时回复城市天气占位信息。要求用新版 maibot-plugin-sdk，不要 import src.*，并补上 _manifest.json。",
+      "expected_output": "Creates a MaiBot plugin folder with plugin.py and _manifest.json, uses MaiBotPlugin plus @Command, includes lifecycle methods and create_plugin(), declares send.text capability, and avoids src.* imports.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "帮我把这个旧麦麦插件迁移到新 SDK：它现在用了 BasePlugin、@register_plugin、BaseCommand 和 self.send_text。请按 maibot-plugin-sdk 的方式改成可加载的新插件。",
+      "expected_output": "Explains and performs the migration to MaiBotPlugin, create_plugin(), @Command, self.ctx.send.text, updated imports, lifecycle methods, and manifest capability updates.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我想做一个 MaiBot 插件，把外部 QQ 适配器的消息注入主程序，同时能处理主程序发出的消息。请给出插件骨架和关键注意点。",
+      "expected_output": "Uses MessageGateway with duplex route, updates gateway runtime state in on_load/on_unload, routes inbound messages through ctx.gateway.route_message, returns outbound send results, and notes manifest/capability requirements.",
+      "files": []
+    }
+  ]
+}
