@@ -1,6 +1,6 @@
 # Component Signatures
 
-Use this reference when implementing or migrating MaiBot SDK components. It is based on local `maibot-plugin-sdk` version 2.5.4.
+Use this reference when implementing or migrating MaiBot SDK components. It reflects the SDK shape observed when this skill was written, but the SDK package imported by the current MaiBot environment is authoritative. Re-check that package's `components.py`, `plugin.py`, and `types.py` before relying on a signature.
 
 ## Imports
 
@@ -54,6 +54,7 @@ Useful base APIs:
 
 - `self.ctx`: injected `PluginContext`.
 - `self.config`: validated config object, only when `config_model` is declared.
+- `self.ctx.paths.data_dir` and `self.ctx.paths.runtime_dir`: plugin-owned persistent/runtime paths.
 - `get_default_config()`: generated defaults from `config_model`.
 - `get_webui_config_schema(...)`: generated WebUI schema from `config_model`.
 - `get_components()`: collected decorated components plus dynamic APIs.
@@ -371,3 +372,5 @@ Useful field metadata:
 - `i18n`
 
 Plugin self config changes arrive via `on_config_update(scope="self", ...)`. Global subscriptions use `config_reload_subscriptions = {ON_BOT_CONFIG_RELOAD, ON_MODEL_CONFIG_RELOAD}`.
+
+`config_reload_subscriptions` must be an iterable, not a bare string. Supported global values are `bot` and `model`; self config updates always arrive through `on_config_update` and do not need a subscription.

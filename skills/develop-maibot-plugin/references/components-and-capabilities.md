@@ -16,6 +16,7 @@ Use this reference when selecting decorators or calling `self.ctx`.
 | Old plugin compatibility only | `@Action` |
 
 For new work, avoid `@Action` unless preserving old behavior. SDK 2.x converts it to Tool metadata internally.
+`WorkflowStep` is removed and raises at runtime; use `@HookHandler`.
 
 ## Tool Pattern
 
@@ -117,7 +118,9 @@ If two plugins declare the same `client_type`, the Host blocks the conflict. Do 
 - `render`: HTML to PNG rendering.
 - `knowledge`: LPMM knowledge search.
 - `tool`: Host tool definition lookup.
+- `statistics`: local model/token/message/tool/online-time trend summaries.
 - `maisaka`: active task and context APIs.
 - `logger`: standard `logging.Logger`.
+- `paths`: plugin-owned `data_dir` and `runtime_dir`.
 
-Inspect `maibot-plugin-sdk/docs/guide.md` and `maibot-plugin-sdk/maibot_sdk/capabilities/*.py` for exact method signatures before implementing an unfamiliar call.
+Manifest capability names usually match the RPC string, not always the Python attribute name. For example, calls through `self.ctx.db.*` require `database.*` declarations in `_manifest.json`. Inspect `<maibot-dir>/plugins/_manifest.schema.json`, `<sdk-dir>/maibot_sdk/context.py`, and `<sdk-dir>/maibot_sdk/capabilities/*.py` for exact method signatures before implementing an unfamiliar call.

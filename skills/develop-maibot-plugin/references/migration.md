@@ -22,7 +22,7 @@ Use this reference when a plugin imports `src.plugin_system`, uses old base clas
 
 ## Migration Workflow
 
-1. Read `maibot-plugin-sdk/docs/migration-guide.md` for the exact old construct being replaced.
+1. Read `<sdk-dir>/docs/migration-guide.md` for the exact old construct being replaced.
 2. Replace imports with `maibot_sdk` imports.
 3. Collapse component classes into decorated async methods on one `MaiBotPlugin` subclass unless the plugin has a strong reason to split helper classes.
 4. Remove manual component registration.
@@ -30,8 +30,9 @@ Use this reference when a plugin imports `src.plugin_system`, uses old base clas
 6. Replace old direct APIs with `self.ctx` calls.
 7. Update `_manifest.json`:
    - `manifest_version`: 2
-   - SDK bounds compatible with local `maibot-plugin-sdk/pyproject.toml`
+   - SDK bounds compatible with local `<sdk-dir>/pyproject.toml`
    - capabilities reflecting actual `ctx` calls
+   - dependency entries using local schema `dependencies` items, not old ad-hoc fields
    - LLM provider declarations if applicable
 8. Run syntax/import checks and targeted load tests.
 
@@ -54,3 +55,4 @@ Use legacy `@Action` only when a narrow migration needs compatibility with old m
 - `WorkflowStep` is removed; do not silently alias it.
 - Component protocol names are uppercase internally (`TOOL`, `COMMAND`, `EVENT_HANDLER`, etc.).
 - `ctx.logger` is a standard logger; do not use removed async logging APIs.
+- `self.ctx.db.*` calls map to manifest capability names `database.*`.

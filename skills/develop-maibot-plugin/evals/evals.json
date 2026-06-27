@@ -5,19 +5,54 @@
       "id": 1,
       "prompt": "在 MaiBot/plugins 下面写一个 weather_notice 插件，用户输入 /weather 上海 时回复城市天气占位信息。要求用新版 maibot-plugin-sdk，不要 import src.*，并补上 _manifest.json。",
       "expected_output": "Creates a MaiBot plugin folder with plugin.py and _manifest.json, uses MaiBotPlugin plus @Command, includes lifecycle methods and create_plugin(), declares send.text capability, and avoids src.* imports.",
-      "files": []
+      "files": [],
+      "assertions": [
+        "plugin.py imports from maibot_sdk and does not import src.* or MaiBot/src internals",
+        "agent identifies the current MaiBot source from the plugin location or user-supplied path before implementing",
+        "agent verifies SDK APIs against the maibot_sdk package imported by the current MaiBot environment rather than relying only on remote docs or a separate checkout",
+        "plugin.py defines a MaiBotPlugin subclass with on_load, on_unload, on_config_update, and create_plugin() with no arguments",
+        "uses @Command with an anchored /weather regex and reads named matched_groups or equivalent safe parsing",
+        "_manifest.json satisfies local schema shape including author.url, urls.repository, i18n.default_locale, id, and semantic version fields",
+        "_manifest.json declares send.text and no unrelated capabilities"
+      ]
     },
     {
       "id": 2,
       "prompt": "帮我把这个旧麦麦插件迁移到新 SDK：它现在用了 BasePlugin、@register_plugin、BaseCommand 和 self.send_text。请按 maibot-plugin-sdk 的方式改成可加载的新插件。",
       "expected_output": "Explains and performs the migration to MaiBotPlugin, create_plugin(), @Command, self.ctx.send.text, updated imports, lifecycle methods, and manifest capability updates.",
-      "files": []
+      "files": [],
+      "assertions": [
+        "removes BasePlugin, register_plugin, BaseCommand, self.send_text, and src.plugin_system imports",
+        "uses MaiBotPlugin, @Command, self.ctx.send.text, lifecycle methods, and create_plugin()",
+        "updates manifest_version to 2 and declares send.text capability",
+        "preserves command behavior rather than replacing it with an unrelated Tool"
+      ]
     },
     {
       "id": 3,
       "prompt": "我想做一个 MaiBot 插件，把外部 QQ 适配器的消息注入主程序，同时能处理主程序发出的消息。请给出插件骨架和关键注意点。",
       "expected_output": "Uses MessageGateway with duplex route, updates gateway runtime state in on_load/on_unload, routes inbound messages through ctx.gateway.route_message, returns outbound send results, and notes manifest/capability requirements.",
-      "files": []
+      "files": [],
+      "assertions": [
+        "uses @MessageGateway(route_type=\"duplex\" or equivalent duplex declaration)",
+        "calls ctx.gateway.update_state ready=True after startup/connect and ready=False on unload/disconnect",
+        "routes inbound messages with ctx.gateway.route_message including external_message_id or dedupe_key guidance",
+        "manifest declares gateway.route_message and gateway.update_state",
+        "notes that decorator declaration alone is not enough without runtime ready state"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "写一个 score_board 麦麦插件：/score add <name> <points> 记录积分，/score top 显示排行榜。需要配置默认展示数量，另外要用一个第三方包 humanize 格式化数字。请按本地 MaiBot 和 SDK 代码约束来做。",
+      "expected_output": "Creates a plugin with Command handlers, typed config_model/config.toml defaults, plugin-owned persistence or a clearly justified ctx.db use, python_package dependency declaration for humanize, schema-valid manifest, and focused validation instructions.",
+      "files": [],
+      "assertions": [
+        "uses @Command handlers with anchored regexes for add and top",
+        "declares PluginConfigBase config_model and matching config.toml defaults for display limit",
+        "persists plugin data through ctx.paths data_dir or declares database.* capabilities if ctx.db is used",
+        "_manifest.json declares humanize as a dependencies item with type python_package and version_spec",
+        "_manifest.json validates against the local schema and declares only used capabilities"
+      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 # SDK Methods
 
-Use this method-level reference when a plugin needs a specific SDK capability. It is based on local `maibot-plugin-sdk` version 2.5.4. For unfamiliar calls, still inspect `maibot-plugin-sdk/maibot_sdk/capabilities/*.py` and `maibot-plugin-sdk/docs/guide.md`.
+Use this method-level reference when a plugin needs a specific SDK capability. It reflects the SDK shape observed when this skill was written, but the current MaiBot source, its manifest schema, and the `maibot_sdk` package imported by its active Python environment are authoritative. For unfamiliar calls, inspect the imported SDK package source, any active `<sdk-dir>` checkout, and `<maibot-dir>/plugins/_manifest.schema.json`.
 
 ## Manifest Capability Names
 
@@ -21,7 +21,10 @@ When a plugin calls `self.ctx.<capability>`, update `_manifest.json` with matchi
 - `render.html2png`
 - `knowledge.search`
 - `tool.get_definitions`
+- `statistics.local.models`, `statistics.local.model_trend`, `statistics.local.token_trend`, `statistics.local.token_distribution`, `statistics.local.message_trend`, `statistics.local.tool_trend`, `statistics.local.online_time_trend`
 - `maisaka.context.append`, `maisaka.proactive.trigger`
+
+Note the naming distinction: plugin code calls `self.ctx.db.*`, but the manifest declares `database.*`.
 
 ## `ctx.api`
 
@@ -128,6 +131,8 @@ Use for temporary speech-frequency influence, not durable behavior settings.
 
 Component type names are normalized to uppercase protocol values. `WorkflowStep` is removed; use `HOOK_HANDLER`.
 
+The local manifest schema includes `component.update_plugin_config`, but the current SDK `ComponentCapability` does not expose a typed helper for it. Do not call it from plugin code unless you first verify a public SDK method in the local code.
+
 ## `ctx.chat`
 
 - `await self.ctx.chat.get_all_streams(platform: str = "qq")`
@@ -165,6 +170,18 @@ Use for LPMM knowledge search when plugin behavior needs context from the Host k
 
 Use for inspecting Host-visible LLM tool definitions.
 
+## `ctx.statistics`
+
+- `await self.ctx.statistics.local.models(days: int = 7, limit: int = 10)`
+- `await self.ctx.statistics.local.model_trend(days: int = 7, bucket: str = "day", top_models: int = 10, metric: str = "token", module_name: str = "")`
+- `await self.ctx.statistics.local.token_trend(days: int = 7, bucket: str = "day", group_by: str = "", top_items: int = 10)`
+- `await self.ctx.statistics.local.token_distribution(days: int = 7, group_by: str = "model", top_items: int = 10)`
+- `await self.ctx.statistics.local.message_trend(days: int = 7, bucket: str = "day", top_chats: int = 10)`
+- `await self.ctx.statistics.local.tool_trend(days: int = 7, bucket: str = "day", top_tools: int = 10)`
+- `await self.ctx.statistics.local.online_time_trend(days: int = 7, bucket: str = "day")`
+
+Use for local observability plugins. Declare the matching `statistics.local.*` capability.
+
 ## `ctx.maisaka`
 
 - `await self.ctx.maisaka.context.append(stream_id: str, segments: list[dict], *, visible_text: str = "", source_kind: str = "", message_id: str = "", **kwargs)`
@@ -184,3 +201,7 @@ self.ctx.logger.error("failed", exc_info=True)
 ```
 
 The old async logging API is removed. Standard library logging is the intended interface.
+
+## `ctx.paths`
+
+`self.ctx.paths.data_dir` and `self.ctx.paths.runtime_dir` are `pathlib.Path` objects scoped to the plugin id. Use them for plugin-owned persistent data and temporary runtime files instead of writing into arbitrary project directories.

@@ -1,50 +1,90 @@
 ---
 name: develop-maibot-plugin
-description: Develop, migrate, debug, and package MaiBot plugins using the local MaiBot main project and maibot-plugin-sdk. Use this skill whenever the user asks to create a MaiBot plugin, modify a plugin under MaiBot/plugins, migrate an old src.plugin_system plugin to the SDK, add Tool/Command/EventHandler/HookHandler/API/MessageGateway/LLMProvider components, work with _manifest.json or config.toml, or debug plugin loading/runtime behavior, even if they only say "写个麦麦插件" or "给 MaiBot 加个插件功能".
+description: Use when creating, modifying, migrating, debugging, validating, or packaging MaiBot plugins with maibot-plugin-sdk; when prompts mention 麦麦/MaiBot 插件, a plugins directory, _manifest.json, config.toml, Tool/Command/EventHandler/HookHandler/API/MessageGateway/LLMProvider, src.plugin_system migration, plugin loading, or plugin runtime failures.
 ---
 
 # MaiBot Plugin Development
 
-Use this skill to build plugins for the local MaiBot workspace. Treat the local repositories as the source of truth:
+Use this skill to build plugins for the local MaiBot workspace. Treat local code as the contract and online docs as reference only. If docs and code disagree, follow code.
 
-- Main project: `MaiBot/`
-- Plugin SDK: `maibot-plugin-sdk/`
-- Local SDK guide: `maibot-plugin-sdk/docs/guide.md`
-- SDK migration guide: `maibot-plugin-sdk/docs/migration-guide.md`
-- Example plugin: `MaiBot/plugins/hello_world_plugin/`
-- Online docs to verify when network is available: `https://github.com/Mai-with-u/docs/tree/main/develop` and its plugin development area. The user may refer to `plugin-dev`; current docs may use `plugin_develop`, so inspect the tree instead of assuming the path.
+- Main project: use the MaiBot path supplied by the user; if none is supplied, discover it from the plugin path.
+- Plugin SDK: use the SDK source actually imported by the current MaiBot environment, usually under the main project's `.venv`.
+- Local SDK guide: `<sdk-dir>/docs/guide.md`
+- SDK migration guide: `<sdk-dir>/docs/migration-guide.md`
+- Example plugin: `<maibot-dir>/plugins/hello_world_plugin/`
+- Manifest schema: `<maibot-dir>/plugins/_manifest.schema.json`
+- Remote SDK repository, supplementary only: `https://github.com/Mai-with-u/maibot-plugin-sdk/tree/main`
+- Remote MaiBot repository, supplementary only: `https://github.com/Mai-with-u/MaiBot`
+- Online plugin docs, lowest-priority reference only: `https://github.com/Mai-with-u/docs/tree/main/develop/plugin-dev`
+
+## Source Priority
+
+Use this order when facts conflict:
+
+1. Current development environment MaiBot source code.
+2. SDK source imported by that MaiBot environment, especially the package visible from `<maibot-dir>/.venv`.
+3. Any separate local SDK checkout supplied by the user.
+4. Remote MaiBot and SDK repositories.
+5. Online plugin docs.
+
+Plugin development depends on the main program's runtime and loader behavior, so do not design only from SDK docs or remote repositories. Always verify against the current MaiBot source and the SDK version that this MaiBot environment actually imports.
 
 ## First Moves
 
-1. Inspect the target plugin and nearby examples before editing:
-   - `rg --files MaiBot/plugins maibot-plugin-sdk | sort`
-   - `sed -n '1,260p' MaiBot/plugins/hello_world_plugin/plugin.py`
-   - `sed -n '1,220p' MaiBot/plugins/hello_world_plugin/_manifest.json`
-2. Read the SDK docs section that matches the task. Prefer `maibot-plugin-sdk/docs/guide.md` over memory.
-3. Decide the plugin shape:
-   - Ordinary user-facing ability: `@Tool` for model-invoked actions, `@Command` for explicit slash/regex commands.
-   - Passive reaction or pipeline observation: `@EventHandler`.
-   - Named pipeline extension with ordering/error policy: `@HookHandler`.
-   - Plugin-to-plugin callable surface: `@API(public=True)` plus `self.ctx.api.call`.
-   - External platform bridge: `@MessageGateway` plus `self.ctx.gateway.update_state` and `route_message`.
-   - Custom model provider: manifest `llm_providers` plus `@LLMProvider`.
-4. Keep plugins isolated from MaiBot internals. New plugin code should import from `maibot_sdk` and ordinary third-party libraries, not `MaiBot/src/*` or `src.*`.
+Before editing, establish the real local API surface:
 
-## Required Plugin Contract
+```bash
+PLUGIN_DIR="${PLUGIN_DIR:-MaiBot/plugins/<plugin_name>}"
+MAIBOT_DIR="${MAIBOT_DIR:-$(cd "$PLUGIN_DIR/../.." && pwd -P)}"
+SDK_PACKAGE_DIR="$("$MAIBOT_DIR/.venv/bin/python" - <<'PY'
+import inspect
+import maibot_sdk
+from pathlib import Path
+print(Path(inspect.getfile(maibot_sdk)).resolve().parent)
+PY
+)"
+SDK_DIR="${SDK_DIR:-$(cd "$SDK_PACKAGE_DIR/.." && pwd -P)}"
+rg --files "$MAIBOT_DIR/plugins" "$SDK_PACKAGE_DIR" "$SDK_DIR/docs" | sort
+sed -n '1,320p' "$MAIBOT_DIR/plugins/hello_world_plugin/plugin.py"
+sed -n '1,260p' "$MAIBOT_DIR/plugins/hello_world_plugin/_manifest.json"
+sed -n '1,220p' "$SDK_PACKAGE_DIR/__init__.py"
+sed -n '1,260p' "$MAIBOT_DIR/plugins/_manifest.schema.json"
+```
+
+If `<maibot-dir>/.venv/bin/python` does not exist, inspect the project files to find the active virtual environment or Python interpreter before relying on any SDK checkout.
+
+Then read only the references that match the job:
+
+- New plugin/folder/manifest/config: `references/scaffolding.md`
+- Decorator selection and `self.ctx` capabilities: `references/components-and-capabilities.md`
+- Exact decorator/config signatures: `references/component-signatures.md`
+- Exact capability methods and manifest capability names: `references/sdk-methods.md`
+- Old `src.plugin_system` migration: `references/migration.md`
+- Load/reload/runtime failures or completion claims: `references/testing-debugging.md`
+
+## Choose The Shape
+
+- Ordinary user-facing ability: `@Tool` for model-invoked actions, `@Command` for explicit slash/regex commands.
+- Passive reaction or pipeline observation: `@EventHandler`.
+- Named pipeline extension with ordering/error policy: `@HookHandler`.
+- Plugin-to-plugin callable surface: `@API(public=True)` plus `self.ctx.api.call`.
+- External platform bridge: `@MessageGateway` plus `self.ctx.gateway.update_state` and `route_message`.
+- Custom model provider: manifest `llm_providers` plus `@LLMProvider`.
+
+Prefer `@Tool` over legacy `@Action` for new behavior. `Action` exists for migration compatibility and is internally converted to Tool metadata. `WorkflowStep` raises at runtime; migrate it to `HookHandler`.
+
+## Required Contract
 
 Every SDK plugin needs:
 
-- A folder under `MaiBot/plugins/<plugin_name>/`.
-- `plugin.py` as the entry file.
-- A `MaiBotPlugin` subclass.
-- Implemented async lifecycle methods:
-  - `on_load(self) -> None`
-  - `on_unload(self) -> None`
-  - `on_config_update(self, scope: str, config_data: dict[str, object], version: str) -> None`
-- A module-level `create_plugin()` that returns an instance. It receives no arguments, so do setup in `on_load`.
-- Usually a `_manifest.json` with `manifest_version`, `id`, version bounds, dependencies, and capability declarations.
+- Folder under `<maibot-dir>/plugins/<plugin_name>/`.
+- `plugin.py` entry file.
+- One `MaiBotPlugin` subclass.
+- Async lifecycle methods: `on_load`, `on_unload`, `on_config_update`.
+- Module-level `create_plugin()` returning an instance with no arguments.
+- Usually `_manifest.json`; follow `<maibot-dir>/plugins/_manifest.schema.json`.
 
-Minimal skeleton:
+Minimal command/tool skeleton:
 
 ```python
 from maibot_sdk import CONFIG_RELOAD_SCOPE_SELF, Command, MaiBotPlugin, Tool
@@ -60,7 +100,7 @@ class MyPlugin(MaiBotPlugin):
 
     async def on_config_update(self, scope: str, config_data: dict[str, object], version: str) -> None:
         if scope == CONFIG_RELOAD_SCOPE_SELF:
-            self.ctx.logger.info("Plugin config updated: version=%s", version)
+            self.ctx.logger.info("Config updated: version=%s", version)
         del config_data
 
     @Tool(
@@ -96,45 +136,39 @@ def create_plugin() -> MyPlugin:
 
 When asked to implement a plugin:
 
-1. Identify whether this is new development, modification, migration, or debugging.
-2. Read the relevant references:
-   - New plugin or feature: `references/scaffolding.md` and `references/components-and-capabilities.md`.
-   - Exact decorator arguments, config model details, dynamic APIs, or component signatures: `references/component-signatures.md`.
-   - Exact `self.ctx` capability methods, method signatures, and manifest capability names: `references/sdk-methods.md`.
-   - Migration from old plugin system: `references/migration.md`.
-   - Debug/test/load problem: `references/testing-debugging.md`.
-3. Implement close to existing project style. Use `MaiBot/plugins/hello_world_plugin` as the local style anchor.
-4. Update `_manifest.json` capabilities when the plugin uses `self.ctx.*` features such as `send.text`, `emoji.get_random`, `config.get`, `llm.generate`, or `gateway.route_message`.
-5. Add or update `config_model` and `config.toml` only when configuration is needed. Prefer strong typed `PluginConfigBase` models for new plugins.
-6. Validate with the most focused available checks:
-   - Syntax/import check for the plugin.
-   - SDK tests if changing SDK code.
-   - Main project plugin load or targeted tests if available.
+1. Classify the task: new plugin, existing plugin change, migration, runtime debugging, SDK/runtime change, or packaging.
+2. Inspect the target plugin and local SDK/source files before choosing APIs.
+3. Implement in the existing style. Use `hello_world_plugin` as a style anchor, but modernize new behavior to `Tool` rather than copying old `Action`.
+4. Keep plugin code isolated from host internals. New plugin code should import from `maibot_sdk` and ordinary third-party libraries, not `MaiBot/src/*` or `src.*`.
+5. Update `_manifest.json` using the schema, including exact capability strings for each `self.ctx.*` call.
+6. Add `config_model` and `config.toml` only when configuration is needed. Prefer typed `PluginConfigBase` models for new configurable plugins.
+7. Validate with the most focused available checks before claiming success.
 
 ## Design Rules
 
-- Prefer `@Tool` over legacy `@Action` for new behavior. `Action` is retained as a compatibility entry and is converted internally to Tool metadata.
 - Do not directly call host internals. Use `self.ctx` capability proxies.
 - Avoid blocking operations inside async handlers; use async libraries or `asyncio.to_thread` for unavoidable blocking work.
-- Make Tool descriptions useful to the LLM: include when to use the tool, required context, parameter meanings, and return semantics.
+- Make Tool descriptions useful to the model: include when to use the tool, required context, parameter meanings, and return semantics.
 - Make Command regexes anchored and explicit. Read `matched_groups` from `kwargs` when named groups are used.
 - Keep state on the plugin instance only for runtime cache/state. Persist durable data through `ctx.db` or explicit files only when the plugin design calls for it.
 - Use `self.ctx.logger` for logs. The old async logging API is removed.
-- For message models, copy dictionaries before mutation when you need to modify message content.
+- Use `self.ctx.paths.data_dir` and `runtime_dir` for plugin-owned files instead of writing into arbitrary host paths.
+- For message dictionaries, defensive-check keys and copy before mutation when modifying message content.
 
 ## Common Return Shapes
 
 - `@Tool`: return a dict, commonly `{"success": True, "message": "...", ...}` or `{"name": "...", "content": "..."}`.
-- `@Command`: existing examples return `(success: bool, message: str, show_to_user: bool/int)`.
+- `@Command`: existing examples return `(success: bool, message: str, show_to_user: bool | int)`.
 - `@EventHandler`: follow the guide and existing examples for tuple shape; keep no-op handlers returning a successful continuation.
 - `@MessageGateway`: return a dict with at least `success`; include `external_message_id` when available.
 - `@LLMProvider`: follow the SDK guide exactly for request/response fields and manifest declarations.
 
-## Reference Routing
+## Validation Standard
 
-- Read `references/scaffolding.md` before creating a new plugin folder, manifest, config model, or README.
-- Read `references/components-and-capabilities.md` when selecting decorators or using `self.ctx`.
-- Read `references/component-signatures.md` when implementing `@API`, `@Tool`, `@Command`, `@EventHandler`, `@HookHandler`, `@MessageGateway`, `@LLMProvider`, legacy `@Action`, config models, or dynamic APIs.
-- Read `references/sdk-methods.md` when using a specific `self.ctx` method or updating `_manifest.json` capability declarations.
-- Read `references/migration.md` before changing legacy plugins that import `src.plugin_system`, use `BasePlugin`, `register_plugin`, `BaseAction`, `BaseCommand`, `ConfigField`, `WorkflowStep`, or direct `src.*` APIs.
-- Read `references/testing-debugging.md` before claiming a plugin loads, before changing SDK code, or when diagnosing reload/runtime failures.
+Before reporting a plugin is done or loads:
+
+- Run a syntax/import check for the edited plugin.
+- Instantiate `create_plugin()` and inspect collected components when the SDK is importable.
+- Validate `_manifest.json` against `<maibot-dir>/plugins/_manifest.schema.json` when a manifest was changed.
+- Run SDK or MaiBot targeted tests if SDK/runtime code changed.
+- Report exactly which checks ran and what passed. If dependencies block a check, say so and include the strongest check that did run.
