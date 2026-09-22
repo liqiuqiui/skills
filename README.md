@@ -24,6 +24,7 @@ Do not put a `SKILL.md` at the repository root if this catalog will contain mult
 ## Available Skills
 
 - `develop-maibot-plugin` - develop, migrate, debug, and package MaiBot plugins with `maibot-plugin-sdk`, including SDK 2.5.4 component signatures and `self.ctx` capability methods.
+- `koishi-plugin-development` - 创建、调试、测试和发布中文 Koishi 插件，覆盖 TypeScript、Schema、服务依赖、指令、中间件、生命周期和官方源码模式。
 
 ## Install With `skills`
 
